@@ -1,125 +1,39 @@
+# Chirpin
 
-# 🐦 Chirpin
+Chirpin is a light, purple-accented community app built with React, TanStack Start, and PostgreSQL/PGlite.
 
-A modern social media platform where people can connect, share posts, upload media, follow users, and interact with their community.
+## Social features
 
-## ✨ Features
+- Follow and unfollow profiles, with follower/following counts.
+- A **Following** feed containing your own posts and posts from people you follow, alongside **For you** (the public community feed).
+- Threaded replies on posts.
+- Image and video attachments on posts (JPEG, PNG, GIF, WebP, MP4, WebM, QuickTime; 5 MB maximum per attachment).
 
-- 👤 User profiles
-- ➕ Follow and unfollow users
-- 📝 Create and delete posts
-- 🖼️ Image and video posts
-- 💬 Comments and threaded replies
-- ❤️ Like posts
-- ☑️ Verified badges
-- 👑 VIP badges
-- 🛡️ Admin panel
-- 🚫 Ban and unban accounts
-- 🗑️ Post moderation
-- 🔤 Blocked-word filtering
-- 🎨 Light theme with purple accents
+## Database migration
 
-## 🛠️ Tech Stack
+`migrations/0003_chirpin_social.sql` adds the follow graph, comment parent references, and post media columns. It is applied automatically by the existing migration runner on startup/build.
 
-- React
-- TypeScript
-- TanStack Start
-- TanStack Router
-- Tailwind CSS
-- Better Auth
-- SQL Database
+## Media storage note
 
-## 🚀 Getting Started
+For portability, media attachments are currently stored as base64 data URLs in the post database row. This is suitable for small early-stage uploads and demos, but is not an ideal long-term media architecture. Before public scale, move uploads to object storage (for example, S3-compatible storage or Cloudinary) and persist only the returned media URL.
 
-### 1. Clone the repository
-
-```bash
-git clone YOUR_REPOSITORY_URL
-cd chirpin
-```
-
-### 2. Install dependencies
+## Run
 
 ```bash
 npm install
-```
-
-### 3. Configure environment variables
-
-Create a `.env` file in the project root.
-
-```env
-DATABASE_URL=your_database_url
-BETTER_AUTH_SECRET=your_secret_key
-BETTER_AUTH_URL=http://localhost:3000
-ADMIN_EMAILS=your_registered_email@example.com
-```
-
-Keep your secrets private. Never commit your `.env` file.
-
-### 4. Run database migrations
-
-Run the database migration process configured by your project.
-
-### 5. Start the development server
-
-```bash
 npm run dev
 ```
 
-Open:
+The app uses the existing auth configuration and database setup. A deployed instance needs its configured authentication provider and `DATABASE_URL` as described by the original project setup.
 
-```text
-http://localhost:3000
-```
 
-## 🛡️ Admin Panel
+## Admin panel and member badges
 
-Visit:
+Set the server-only `ADMIN_EMAILS` environment variable to a comma-separated list of administrator email addresses (for example, `owner@example.com`). These addresses must belong to existing signed-in accounts. The Admin link then appears for those accounts, where admins can grant/revoke Verified and VIP badges. Never expose `ADMIN_EMAILS` as a `VITE_` variable. The database migration `0004_chirpin_roles_badges.sql` adds the badge fields.
 
-```text
-/admin
-```
 
-Admin access is controlled through the server-side `ADMIN_EMAILS` environment variable.
+## Admin and moderation
 
-Admins can:
+Set `ADMIN_EMAILS` in the server environment to a comma-separated list of the email addresses of registered Chirpin accounts that should administer the site. Keep this variable server-side (never prefix it with `VITE_`). Admins sign in normally, then open `/admin`. Admin endpoints re-check the allowlist on the server.
 
-- Assign or remove verified badges
-- Assign or remove VIP badges
-- Ban or unban accounts
-- Moderate and delete posts
-- Manage blocked words
-
-Never rely on a password check performed only in the browser for admin security.
-
-## 🌐 Deployment
-
-You can deploy Chirpin using platforms such as:
-
-- Vercel
-- Netlify (if configured for the app's server runtime)
-
-For Vercel:
-
-1. Import your GitHub repository.
-2. Configure the required environment variables.
-3. Connect your production database.
-4. Deploy the project.
-5. Visit `/admin` after signing in with your configured admin account.
-
-## 🔐 Security
-
-- Keep API secrets private.
-- Use server-side authorization for admin actions.
-- Validate user input on the server.
-- Do not expose admin credentials in frontend code.
-- Back up your database regularly.
-
-## 📄 License
-
-Choose a license before distributing or accepting contributions to this project.
-
----
-
-Made with 💜 for the Chirpin community.
+Migration `0005_chirpin_moderation.sql` adds account suspension and the blocked-word list. The admin panel can assign verified/VIP badges, suspend or restore accounts, remove posts (including attached image/video data), and manage blocked words. Suspended accounts are rejected by the server auth middleware. Blocked words are checked against new posts and replies.
